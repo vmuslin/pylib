@@ -1,0 +1,27 @@
+# This is an example Yaml file
+DEFINE:
+  - ROOT: '/home'
+  - IMAGE: '$[ROOT]/Image'
+  - PROTOCOL: 'http'
+  - SERVER: 'www.test.com'
+  - PORT: '8080'
+  - TEST: '$[PROTOCOL]://$[SERVER]:$[PORT]$[IMAGE]-$[ROOT]+$[IMAGE]'
+  - 123: 345
+#  - CYCLE1: $[CYCLE2]
+#  - CYCLE2: $[CYCLE1]
+www:
+  - $[123]
+  - list-item1
+  - list-item2
+xxx:
+  yyy: zzz
+  zzz: foo
+  long: |
+        This is a long
+        text shown as a string
+dirs:
+  root: '$[ROOT]'
+  mydir: '$[IMAGE]/my/dir'
+
+root_url: '1 -> $[PROTOCOL]://$[SERVER]:$[PORT]'
+root_url2: '2 -> $[PROTOCOL]://$[SERVER]:$[PORT]'

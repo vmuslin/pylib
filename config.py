@@ -9,7 +9,7 @@ from pprint import pprint
 import yaml
 
 # My modules
-import utils.exceptions as exceptions
+import pylib.exceptions as exceptions
 
 
 class ConfigException(exceptions.BasicException):
@@ -179,7 +179,7 @@ if __name__ == '__main__':
     args = vars(ap.parse_args())
     filename = args['file']
     if not filename:
-        filename = 'config.yaml'
+        filename = 'config/config.yaml'
 
     try:
         yc = YAMLConfigWithMacros(yaml_filename=filename)

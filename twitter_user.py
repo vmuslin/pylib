@@ -1,7 +1,7 @@
 import os.path
 import tweepy
 
-import utils.exceptions
+import pylib.exceptions
 
 class TwitterUserException(utils.exceptions.BasicException):
     def __init__(self, errmsg):

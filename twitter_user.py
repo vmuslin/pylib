@@ -3,10 +3,9 @@ import tweepy
 
 import pylib.exceptions
 
-class TwitterUserException(utils.exceptions.BasicException):
+class TwitterUserException(pylib.exceptions.BasicException):
     def __init__(self, errmsg):
         super().__init__(errmsg)
-
 
 
 class TwitterUser:

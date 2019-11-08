@@ -3,6 +3,7 @@
 # Generic Python modules
 import os.path
 import re
+
 from pprint import pprint
 
 # 3rd party modules
@@ -10,6 +11,7 @@ import yaml
 
 # My modules
 import pylib.exceptions as exceptions
+from pylib.paths import path
 
 
 class ConfigException(exceptions.BasicException):
@@ -58,7 +60,7 @@ class YAMLConfig(BaseConfig):
 
         # If YAML is a file, the read it and parse it
         elif self.yaml_filename:
-            with open(self.yaml_filename, 'r') as file:
+            with path(self.yaml_filename).open('r') as file:
                 self.params = yaml.load(file, Loader=yaml.FullLoader)
 
 

@@ -1,12 +1,13 @@
 import os.path
 import sqlite3
 
+from pylib.paths import path
 
 class DBConnection:
 
     def __init__(self, db):
         self.db = db
-        self.conn = sqlite3.connect(db)
+        self.conn = sqlite3.connect(str(path(db)))
         
 
 class SqlCache():
@@ -22,7 +23,7 @@ class SqlCache():
             if sql_statement:
                 self.sql_cache[lable] = sql_statement
             elif self.sql_path and sql_file:
-                with open(os.path.join(self.sql_path, label), 'r') as f:
+                with path(os.path.join(self.sql_path, label)).open('r') as f:
                     self.sql_cache[label] = f.read()
 
 

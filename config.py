@@ -27,41 +27,39 @@ class YAMLException(ConfigException):
 # Various helper methods
 class BaseConfig():
 
+    def __init__(self, config_string=None, config_filename=None):
+        self.cfg = None
+        self.config_string = config_string
+        self.config_filename = config_filename
 
-    def __init__(self):
-        self.params = None
+    def load_config(self):
+        self.cfg = None
 
 
-    def mkpath(self, path, sep=None):
-        'Change path separator from "/" to the os-specific separator.'
-        
-        if not path:
-            return path
-        if path[0] == '/':
-            return os.sep + os.path.join(*path.split('/'))
-        else:
-            return os.path.join(*path.split('/'))
+    def refresh_config(self):
+        self.load_config()
 
 
 class YAMLConfig(BaseConfig):
 
-
     def __init__(self, yaml_string=None, yaml_filename=None):
-        super().__init__()
-        self.yaml_string = yaml_string
-        self.yaml_filename = yaml_filename
+        super().__init__(yaml_string, yaml_filename)
         self.yaml_parse()
 
+    def load_config(self):
+        super().load_config()
+        self.yaml_parse()
+        
 
     def yaml_parse(self):
         # If YAML is a string then parse it
-        if self.yaml_string:
-            self.params = yaml.load(self.yaml_string, Loader=yaml.FullLoader)
+        if self.config_string:
+            self.cfg = yaml.load(self.config_string, Loader=yaml.FullLoader)
 
         # If YAML is a file, the read it and parse it
-        elif self.yaml_filename:
-            with path(self.yaml_filename).open('r') as file:
-                self.params = yaml.load(file, Loader=yaml.FullLoader)
+        elif self.config_filename:
+            with path(self.config_filename).open('r') as file:
+                self.cfg = yaml.load(file, Loader=yaml.FullLoader)
 
 
 
@@ -73,11 +71,16 @@ class YAMLConfigWithMacros(YAMLConfig):
     
 
     def __init__(self, yaml_string=None, yaml_filename=None):
-        super().__init__(yaml_string, yaml_filename)
+        super().__init__(yaml_string,yaml_filename)
         self.regexp = None
         self.macros = None
         self.process_macros()
 
+
+    def load_config(self):
+        super().load_config()
+        self.process_macros()
+        
 
     def process_macros(self):
 
@@ -85,7 +88,7 @@ class YAMLConfigWithMacros(YAMLConfig):
 
         # Get the macros dictionary
         try:
-            expansion_rules = self.params[YAMLConfigWithMacros.DefinitionTag]
+            expansion_rules = self.cfg[YAMLConfigWithMacros.DefinitionTag]
 
             # Build the regular expression for the macro match
             if not YAMLConfigWithMacros.MacroRE:
@@ -136,10 +139,10 @@ class YAMLConfigWithMacros(YAMLConfig):
 
         def expand_yaml_macros():
 
-            if self.yaml_string:
-                yaml_string = self.yaml_string
+            if self.config_string:
+                yaml_string = self.config_string
             else:
-                yaml_string = yaml.dump(self.params)
+                yaml_string = yaml.dump(self.cfg)
         
             matches = self.regexp.findall(yaml_string)
             
@@ -147,7 +150,7 @@ class YAMLConfigWithMacros(YAMLConfig):
                 for macro in set(matches):
                     yaml_string = yaml_string.replace(macro, self.macros[macro])
 
-                self.params = yaml.load(yaml_string, Loader=yaml.FullLoader)
+                self.cfg = yaml.load(yaml_string, Loader=yaml.FullLoader)
 
         build_expansion_dictionary()
         expand_yaml_macros()
@@ -185,13 +188,16 @@ if __name__ == '__main__':
 
     try:
         yc = YAMLConfigWithMacros(yaml_filename=filename)
-        y = yc.params
+        y = yc.cfg
         pprint(y)
         pprint(y['www'])
-        root = yc.mkpath(y['dirs']['root'])
-        print('Root: ', root)
-        fname = yc.mkpath(y['dirs']['mydir'])
-        print('Rootify: ', fname, ' = ', os.path.join(root, fname))
+
+        y = None
+        yc.cfg = None
+        
+        yc.refresh_config()
+        y = yc.cfg
+        pprint(y['dirs'])
     except YAMLException as e:
         print('Got YAML exception!', e)
         

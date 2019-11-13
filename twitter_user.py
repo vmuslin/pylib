@@ -59,8 +59,10 @@ class TwitterUser:
         return self.access_token and self.access_token_secret
 
 
-    def set_api(self):
-        self.api = tweepy.API(self.auth)
+    def set_api(self, wait_on_rate_limit=True, wait_on_rate_limit_notify=True):
+        self.api = tweepy.API(self.auth,
+                              wait_on_rate_limit=wait_on_rate_limit,
+                              wait_on_rate_limit_notify=wait_on_rate_limit_notify)
 
 
     def set_credentials(self, access_token=None, access_token_secret=None):

@@ -2,7 +2,7 @@
 
 class BasicException(Exception):
 
-    def __init__(self, errmsg="No error message"):
+    def __init__(self, errmsg=''):
         self.errmsg = errmsg
 
     def __str__(self):

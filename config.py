@@ -3,6 +3,7 @@
 # Generic Python modules
 import os.path
 import re
+import subprocess
 
 from pprint import pprint
 
@@ -32,26 +33,27 @@ class BaseConfig():
         self.config_string = config_string
         self.config_filename = config_filename
 
-    def load_config(self):
+    def load(self):
         self.cfg = None
+        return self
 
 
-    def refresh_config(self):
-        self.load_config()
+    def refresh(self):
+        self.load()
 
 
 class YAMLConfig(BaseConfig):
 
     def __init__(self, yaml_string=None, yaml_filename=None):
         super().__init__(yaml_string, yaml_filename)
-        self.yaml_parse()
 
-    def load_config(self):
-        super().load_config()
-        self.yaml_parse()
+
+    def load(self):
+        self._yaml_parse()
+        return self
         
 
-    def yaml_parse(self):
+    def _yaml_parse(self):
         # If YAML is a string then parse it
         if self.config_string:
             self.cfg = yaml.load(self.config_string, Loader=yaml.FullLoader)
@@ -63,23 +65,55 @@ class YAMLConfig(BaseConfig):
 
 
 
+class YAMLConfigM4(YAMLConfig):
+
+    MacroProcessor = 'm4'
+
+    def __init__(self, yaml_string=None,
+                 yaml_filename=None):
+        super().__init__(yaml_string, yaml_filename)
+
+
+    def load(self):
+        # If YAML is a string then parse it
+        if self.config_string:
+            super().load()
+        # If YAML is a file, the pass it through M4 and parse it
+        elif self.config_filename:
+            self._parse_file()
+
+        return self
+
+
+    def _parse_file(self):
+        # If YAML is a file, the pass it through a pre-processor and then parse it
+        if self.config_filename:
+            file = str(path(self.config_filename))
+            self.config_string = subprocess.check_output([YAMLConfigM4.MacroProcessor, file])
+            self.cfg = yaml.load(self.config_string, Loader=yaml.FullLoader)
+        
+
+# This class is deprecated
+
 class YAMLConfigWithMacros(YAMLConfig):
 
     MacroPattern = '\$\[[^\]]+?\]'  # Patter for non-greedy match of '$[macro]'
     MacroRE = None
     DefinitionTag = 'DEFINE'
+    DefaultPreprocessor = 'm4'
     
 
     def __init__(self, yaml_string=None, yaml_filename=None):
+
         super().__init__(yaml_string,yaml_filename)
         self.regexp = None
         self.macros = None
-        self.process_macros()
 
 
-    def load_config(self):
-        super().load_config()
+    def load(self):
+        self._yaml_parse()
         self.process_macros()
+        return self
         
 
     def process_macros(self):
@@ -156,26 +190,6 @@ class YAMLConfigWithMacros(YAMLConfig):
         expand_yaml_macros()
 
 
-def test():
-    pat = '\$\[[^\]]+?\]'
-    regex = re.compile(pat)
-
-    string = '$[PROTOCOL]://$[SERVER]:$[PORT]'
-    print('String: ', string)
-
-    dic = { 'PROTOCOL' : 'http', 'SERVER' : 'my.server.com', 'PORT' : 2727 }
-    print('Dictionary:')
-    pprint(dic)
-    macros = regex.findall(string)
-    print('Macros:')
-    pprint(macros)
-    for m in macros:
-        key = m[2:-1]
-        print('Found:', m, 'Substituting:', key, 'with', dic[key])
-        string = string.replace(m, str(dic[key]))
-        print('Result:', string)
-
-
 if __name__ == '__main__':
     import argparse
 
@@ -183,21 +197,15 @@ if __name__ == '__main__':
     ap.add_argument('-f', '--file', required=False, help='Config file')
     args = vars(ap.parse_args())
     filename = args['file']
-    if not filename:
-        filename = 'config/config.yaml'
 
     try:
-        yc = YAMLConfigWithMacros(yaml_filename=filename)
-        y = yc.cfg
-        pprint(y)
-        pprint(y['www'])
+        if not filename:
+            raise YAMLException('No config file specified')
 
-        y = None
-        yc.cfg = None
-        
-        yc.refresh_config()
-        y = yc.cfg
-        pprint(y['dirs'])
+        cfg = YAMLConfigM4(yaml_filename=filename).load().cfg
+        pprint(cfg)
+        exit(0)
+
     except YAMLException as e:
         print('Got YAML exception!', e)
         

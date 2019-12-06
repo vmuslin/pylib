@@ -20,6 +20,8 @@ def path(path):
     # Build Path object
     for p in parts:
         if not newpath:
+            if len(p) == 2 and p[1] == ':':
+                p = p + '\\'
             newpath = Path(p)
         else:
             newpath = newpath / p

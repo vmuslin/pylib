@@ -105,8 +105,8 @@ class YAMLConfigM4(YAMLConfig):
         self.cfg = yaml.load(self.string, Loader=yaml.FullLoader)
         
 
-def get_file_contents(filename):
-    with path(filename).open('r') as file:
+def get_file_contents(filename, mode='r'):
+    with path(filename).open(mode) as file:
         return file.read()
 
 

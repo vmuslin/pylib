@@ -35,6 +35,7 @@ class Scheduler():
             output = self.run_command(cmd)
             if file:
                 file.write(output)
+                file.flush()
             if self.repeat == 0:
                 break
             time.sleep(self.interval)
@@ -73,7 +74,7 @@ def scheduler():
                         default=STDOUT,
                         help='Output file, if any')
     parser.add_argument('-r', '--repeat',
-                        default=1,
+                        default=0,
                         type=int,
                         help='How many times to repeat the command')
 

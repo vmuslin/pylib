@@ -96,11 +96,11 @@ class YAMLConfigM4(YAMLConfig):
             cmd = f'{YAMLConfigM4.MacroProcessor} {file}'
 
         self.string = subprocess.run(cmd,
-                                            shell=True,
-                                            stdout=subprocess.PIPE,
-                                            stderr=subprocess.STDOUT,
-                                            check=True,
-                                            universal_newlines=True).stdout
+                                     shell=True,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.STDOUT,
+                                     check=True,
+                                     universal_newlines=True).stdout
 
         self.cfg = yaml.load(self.string, Loader=yaml.FullLoader)
         

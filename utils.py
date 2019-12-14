@@ -1,17 +1,38 @@
 import hashlib
 
+try:
+    from simplecrypt import encrypt, decrypt
+except ModuleNotFoundError as e:
+    # On Windows platform could not install simplecrypt module, which creates
+    # an issue for PyCharm
+    pass
+
+from base64 import urlsafe_b64encode, urlsafe_b64decode, b64encode, b64decode
 from random import seed, randint
 
 from pylib.exceptions import BasicException
 
 
+################################################################################
+# Exceptions
+################################################################################
+class HexDigestException(BasicException):
+    def __init__(self, errmsg=''):
+        super().__init__(errmsg)
+        
+
+################################################################################
+# Classes
+################################################################################
 class Rotator():
 
-
-    def __init__(self, sequence, forever=False):
+    def __init__(self, sequence, forever=False, random_start=True):
         self.sequence = sequence
         self.forever = forever
-        self.index = randint(0, len(self.sequence)-1) if self.sequence else 0
+        if random_start:
+            self.index = randint(0, len(self.sequence)-1) if self.sequence else 0
+        else:
+            self.index = 0
         self.start_index = self.index
         self.rotation_started = False
 
@@ -40,10 +61,9 @@ class Rotator():
             self.start_index = self.index
 
 
-class HexDigestException(BasicException):
-    def __init__(self, errmsg=''):
-        super().__init__(errmsg)
-        
+################################################################################
+# Functions
+################################################################################
 
 def boolify(arg):
 
@@ -79,6 +99,24 @@ def hexdigest(data, secret=None):
 
     else:
         return data
+
+
+def simple_decrypt64(key, cyphertext):
+    try:
+        return decrypt(key, urlsafe_b64decode(cyphertext)).decode('utf-8')
+    except NameError as e:
+        if 'decrypt' in e.args[0]:
+            return urlsafe_b64decode(cyphertext.encode('utf-8')).decode('utf-8')
+        raise e
+
+
+def simple_encrypt64(key, cleartext):
+    try:
+        return urlsafe_b64encode(encrypt(key, cleartext)).decode('utf-8')
+    except NameError as e:
+        if 'encrypt' in e.args[0]:
+            return urlsafe_b64encode(cleartext.encode('utf-8')).decode('utf-8')
+        raise e
 
 
 def test_hexdigest(data, secret=None):
@@ -125,6 +163,12 @@ def test_sequence_rotator():
         count += 1
 
     
+def test_encryption(key, cleartext):
+    crypt = simple_encrypt64(key, cleartext)
+    print(f'Crypt={crypt}')
+    clear = simple_decrypt64(key, crypt)
+    print(f'Clear={clear}')
+
 
 if __name__ == '__main__':
     test_hexdigest('This is test data')
@@ -135,3 +179,4 @@ if __name__ == '__main__':
     test_hexdigest(b'This is test data', 1)
     test_hexdigest(5, b'secret')
     test_sequence_rotator()
+    test_encryption('Key', 'This is a test message')

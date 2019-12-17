@@ -14,6 +14,10 @@ import pylib.exceptions as exceptions
 from pylib.paths import path
 
 
+################################################################################
+# Exceptions
+################################################################################
+
 class ConfigException(exceptions.BasicException):
     def __init__(self, errmsg):
         super().__init__(errmsg)
@@ -24,7 +28,24 @@ class YAMLException(ConfigException):
         super().__init__(errmsg)
 
 
-# Various helper methods
+################################################################################
+# Helper functions
+################################################################################
+
+def get_file_contents(filename, mode='r'):
+    with path(filename).open(mode) as file:
+        return file.read()
+
+def get_html(spec):
+    if ('.html' == spec[-5:].lower()) or ('.htm' == spec[-4:].lower()):
+        return get_file_contents(spec)
+    return spec
+
+
+################################################################################
+# YAML based configuration classes
+################################################################################
+
 class BaseConfig():
 
     def __init__(self, string=None, filename=None):
@@ -105,12 +126,23 @@ class YAMLConfigM4(YAMLConfig):
         self.cfg = yaml.load(self.string, Loader=yaml.FullLoader)
         
 
-def get_file_contents(filename, mode='r'):
-    with path(filename).open(mode) as file:
-        return file.read()
-
-
 if __name__ == '__main__':
+    print(get_html('../redalert/resources/html/thankyou.html'))
+    print('-' * 10)
+    print(get_html('foo.bar'))
+    print('-' * 10)
+    print(get_html('xx'))
+    try:
+        print('-' * 10)
+        print(get_html(1))
+    except TypeError as e:
+        print(e)
+    try:
+        print('-' * 10)
+        print(get_html(None))
+    except TypeError as e:
+        print(e)
+
     import argparse
 
     args = ap.parse_args()

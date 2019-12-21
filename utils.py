@@ -1,4 +1,7 @@
 import hashlib
+from datetime import datetime
+from pytz import timezone
+
 
 try:
     from simplecrypt import encrypt, decrypt
@@ -73,6 +76,15 @@ def boolify(arg):
         return True
     else:
         return False
+
+
+def datetime_from_epoch(epoch, tz=None):
+    tz = timezone('UTC') if not tz else timezone(tz)
+    return datetime.fromtimestamp(epoch, tz)
+
+
+def now():
+    return int(datetime.now().timestamp())
 
 
 def hexdigest(data, secret=None):
@@ -170,6 +182,10 @@ def test_encryption(key, cleartext):
     print(f'Clear={clear}')
 
 
+def test_dt(epoch, tz=None):
+    print(f'Timezone={tz}, Datetime={datetime_from_epoch(epoch, tz)}')
+
+
 if __name__ == '__main__':
     test_hexdigest('This is test data')
     test_hexdigest('This is test data', 'secret')
@@ -180,3 +196,6 @@ if __name__ == '__main__':
     test_hexdigest(5, b'secret')
     test_sequence_rotator()
     test_encryption('Key', 'This is a test message')
+    test_dt(now())
+    test_dt(now(), 'America/New_York')
+    test_dt(now(), 'Asia/Jerusalem')

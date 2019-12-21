@@ -76,7 +76,7 @@ def scheduler():
     parser.add_argument('-r', '--repeat',
                         default=0,
                         type=int,
-                        help='How many times to repeat the command')
+                        help='Specify how many times to repeat the command (default = unlimited)')
 
     args = parser.parse_args()
 

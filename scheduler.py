@@ -1,6 +1,7 @@
+import argparse
+import logging
 import subprocess
 import time
-import argparse
 
 from pylib.paths import path
 

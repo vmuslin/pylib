@@ -34,19 +34,26 @@ class Scheduler(Program):
                               self.args.interval)
             
         except Exception as e:
-            self.log.exception(f' {self.progname}')
+            self.log.exception(f'Exception caught in {self.progname}')
 
 
     def run_loop(self, cmd, repeat, interval, file=None):
         while True:
-            repeat -= 1
-            output = self.run_command(cmd)
-            if file:
-                file.write(output)
-                file.flush()
-            if repeat == 0:
-                break
-            time.sleep(interval)
+            try:
+                repeat -= 1
+                self.log.info(f'Starting {cmd}')
+                output = self.run_command(cmd)
+                self.log.info(f'Finished {cmd}')
+                if file:
+                    file.write(output)
+                    file.flush()
+                if repeat == 0:
+                    break
+                time.sleep(interval)
+            except subprocess.CalledProcessError as e:
+                self.log.exception(f'Command {cmd} returned an error')
+            except Exception as e:
+                self.log.exception(f'Caught exception running {cmd}')
 
 
     def run_command(self, cmd):

@@ -4,12 +4,18 @@ import logging
 
 from pprint import pprint
 
+CRITICAL = 50
+ERROR = 40
+WARNING = 30
+INFO = 20
+DEBUG = 10
 
-Severity = { 'CRITICAL' : 50,
-             'ERROR' : 40,
-             'WARNING' : 30,
-             'INFO' : 20,
-             'DEBUG' : 10 }
+Severity = { 'CRITICAL' : CRITICAL,
+             'ERROR' : ERROR,
+             'WARNING' : WARNING,
+             'INFO' : INFO,
+             'DEBUG' : DEBUG }
+
 
 
 class Program():
@@ -18,11 +24,15 @@ class Program():
                  argv_parser=None,
                  replace_sys_argv=None, # Can be supplied to argv_parser instead of sys.argv, which is the default
                  config=None, # Configuration object
+                 logfile=None,
+                 logseverity=WARNING,
                  logformat='%(asctime)s [%(name)s %(levelname)s]: %(message)s',
                  datefmt='%Y-%m-%d %H:%M:%S'):
         self.replace_sys_argv = replace_sys_argv
         self.argv_parser = argv_parser
         self.config = config
+        self.logfile = logfile
+        self.logseverity = logseverity
         self.logformat = logformat
         self.datefmt = datefmt
 
@@ -34,17 +44,32 @@ class Program():
 
     def initialize(self):
         self.parse_argv()
-        self.initialize_logging(filename=self.args.logfile,
-                                level=self.args.severity,
+
+        try:
+            if self.args.logfile:
+                self.logfile = self.args.logfile
+        except AttributeError:
+            pass
+
+        try:
+            if self.args.severity:
+                self.logseverity = self.args.severity
+        except AttributeError:
+            pass
+            
+        self.initialize_logging(filename=self.logfile,
+                                level=self.logseverity,
                                 format=self.logformat,
                                 datefmt=self.datefmt)
-        self.load_config()
+        if self.config:
+            self.load_config()
+            
         return self
 
 
     def initialize_logging(self,
                            filename=None,
-                           level=Severity['WARNING'],
+                           level=WARNING,
                            format='%(asctime)s [%(name)s %(levelname)s]: %(message)s',
                            datefmt='%Y-%m-%d %H:%M:%S'):
         if self.args:

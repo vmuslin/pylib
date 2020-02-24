@@ -4,47 +4,54 @@ import subprocess
 import time
 
 from pylib.paths import path
+from pylib.program import Program
+from pylib.args import ArgumentParser
 
 
 REPEAT_FOREVER = 0
 STDOUT = '__STDOUT__'
+DEFAULT_INTERVAL_SECONDS = 1
 
 
-class Scheduler():
+class Scheduler(Program):
 
-    def __init__(self,
-                 interval=1,
-                 repeat=REPEAT_FOREVER,
-                 output=STDOUT):
-        self.interval = interval
-        self.repeat = repeat
-        self.output = output
+    def __init__(self, argv_parser=None):
+        super().__init__(argv_parser=argv_parser)
 
 
-    def run(self, cmd):
+    def run(self):
+        try:
+            self.log.info(f'Starting {self.progname}: running "{self.args.command}" every {self.args.repeat} seconds')
+            if self.args.output != STDOUT:
+                with path(self.args.output).open('a') as file:
+                    self.run_loop(self.args.command,
+                                  self.args.repeat,
+                                  self.args.interval,
+                                  file)
+            else:
+                self.run_loop(self.args.command,
+                              self.args.repeat,
+                              self.args.interval)
+            
+        except Exception as e:
+            self.log.exception(f' {self.progname}')
 
-        if self.output != STDOUT:
-            with path(self.output).open('a') as file:
-                self.run_loop(cmd, file)
-        else:
-            self.run_loop(cmd)
 
-
-    def run_loop(self, cmd, file=None):
+    def run_loop(self, cmd, repeat, interval, file=None):
         while True:
-            self.repeat -= 1
+            repeat -= 1
             output = self.run_command(cmd)
             if file:
                 file.write(output)
                 file.flush()
-            if self.repeat == 0:
+            if repeat == 0:
                 break
-            time.sleep(self.interval)
+            time.sleep(interval)
 
 
     def run_command(self, cmd):
 
-        if self.output == STDOUT:
+        if self.args.output == STDOUT:
             subprocess.run(cmd,
                            shell=True,
                            check=True,
@@ -59,40 +66,47 @@ class Scheduler():
                                    universal_newlines=True).stdout)
 
 
-def scheduler():
+class SchedulerArgumentParser(ArgumentParser):
 
-    # Process command line arguments
-    parser = argparse.ArgumentParser(description='Simmple Scheduler')
-    parser.add_argument('-c', '--command',
-                        required=True,
-                        help='Shell command to run')
-    parser.add_argument('-i', '--interval',
-                        required=True,
-                        default=1,
-                        type=int,
-                        help='Time to sleep between executions of the command')
-    parser.add_argument('-o', '--output',
-                        default=STDOUT,
-                        help='Output file, if any')
-    parser.add_argument('-r', '--repeat',
-                        default=0,
-                        type=int,
-                        help='Specify how many times to repeat the command (default = unlimited)')
 
-    args = parser.parse_args()
+    def __init__(self, description=None):
+        super().__init__(description)
 
-    # Launch scheduler
 
-    s = Scheduler(interval=args.interval,
-                  repeat=args.repeat,
-                  output=args.output)
+    def set_basic_args(self):
+        self.add_argument('-c', '--command',
+                          required=True,
+                          help='Shell command to run')
+        self.add_argument('-i', '--interval',
+                          required=True,
+                          default=DEFAULT_INTERVAL_SECONDS,
+                          type=int,
+                          help='Time to sleep between executions of the command')
+        self.add_argument('-o', '--output',
+                          default=STDOUT,
+                          help='Output file, if any')
+        self.add_argument('-r', '--repeat',
+                          default=REPEAT_FOREVER,
+                          type=int,
+                          help='Specify how many times to repeat the command (default = unlimited)')
+        self.add_argument('-s', '--severity',
+                          default='WARNING',
+                          choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
+                          help='Log level severity')
+        self.add_argument('-l', '--logfile',
+                          help='Name of the log output file')
 
-    s.run(args.command)
-    
 
 if __name__ == '__main__':
 
     try:
-        scheduler()
+        # Process command line arguments
+        parser = SchedulerArgumentParser(description='Simmple Scheduler')
+
+        # Launch scheduler
+        s = Scheduler(argv_parser=parser)
+        s.initialize()
+        s.run()
     except Exception as e:
-        print(e)
+        raise e
+
